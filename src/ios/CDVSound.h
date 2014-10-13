@@ -87,6 +87,7 @@ typedef NSUInteger CDVMediaMsg;
 }
 @property (nonatomic, strong) NSMutableDictionary* soundCache;
 @property (nonatomic, strong) AVAudioSession* avSession;
+@property (nonatomic, strong) CDVAudioRecorder* meterRecorder;
 
 - (void)startPlayingAudio:(CDVInvokedUrlCommand*)command;
 - (void)pausePlayingAudio:(CDVInvokedUrlCommand*)command;
@@ -108,7 +109,9 @@ typedef NSUInteger CDVMediaMsg;
 - (BOOL)prepareToPlay:(CDVAudioFile*)audioFile withId:(NSString*)mediaId;
 - (NSString*)createMediaErrorWithCode:(CDVMediaError)code message:(NSString*)message;
 
+- (void)prepareRecordingAudio:(CDVInvokedUrlCommand*)command;
 - (void)startRecordingAudio:(CDVInvokedUrlCommand*)command;
+- (void)getRecordingLevel:(CDVInvokedUrlCommand*)command;
 - (void)stopRecordingAudio:(CDVInvokedUrlCommand*)command;
 
 - (void)setVolume:(CDVInvokedUrlCommand*)command;

@@ -1,3 +1,5 @@
+
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -23,7 +25,7 @@ var argscheck = require('cordova/argscheck'),
     utils = require('cordova/utils'),
     exec = require('cordova/exec');
 
-var mediaObjects = {};
+var mediaObjects = { };
 
 /**
  * This class provides access to the device media, interfaces to both sound and video
@@ -124,12 +126,29 @@ Media.prototype.getCurrentPosition = function(success, fail) {
     }, fail, "Media", "getCurrentPositionAudio", [this.id]);
 };
 
+
+/**
+ * Start recording audio file.
+ */
+Media.prototype.prepareRecord = function() {
+    exec(null, this.errorCallback, "Media", "prepareRecordingAudio", [this.id, this.src]);
+};
+
+
 /**
  * Start recording audio file.
  */
 Media.prototype.startRecord = function() {
-    exec(null, this.errorCallback, "Media", "startRecordingAudio", [this.id, this.src]);
+    exec(null, this.errorCallback, "Media", "startRecordingAudio", [this.id]);
 };
+
+/**
+ * Get mic input level.
+ */
+Media.prototype.getRecordingLevel = function(success) {
+    exec(success, null, "Media", "getRecordingLevel", [this.id]);
+};
+
 
 /**
  * Stop recording audio file.
