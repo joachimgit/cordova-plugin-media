@@ -552,6 +552,7 @@
     if ((audioFile != nil) && (audioFile.resourceURL != nil)) {
         void (^startRecording)(void) = ^{
             NSError* __autoreleasing error = nil;
+            CDVAudioRecorder* recorder = nil;
             
             if (audioFile.recorder != nil) {
                 [audioFile.recorder stop];
@@ -581,12 +582,12 @@
                                       [NSNumber numberWithInt: 16],         AVLinearPCMBitDepthKey,
                                       [NSNumber numberWithBool:NO], AVLinearPCMIsFloatKey,
                                       nil];
-            audioFile.recorder = [[CDVAudioRecorder alloc] initWithURL:audioFile.resourceURL settings:settings error:&error];
+            recorder = [[CDVAudioRecorder alloc] initWithURL:audioFile.resourceURL settings:settings error:&error];
             
             bool recordingSuccess = NO;
             if (error == nil) {
-                audioFile.recorder.delegate = self;
-                audioFile.recorder.mediaId = mediaId;
+                recorder.delegate = self;
+                recorder.mediaId = mediaId;
                 recordingSuccess = [audioFile.recorder prepareToRecord];
                 if (recordingSuccess) {
                     NSURL *url = [NSURL fileURLWithPath:@"/dev/null"];
@@ -600,6 +601,7 @@
                     recordingSuccess = [_meterRecorder prepareToRecord];
                     _meterRecorder.meteringEnabled = YES;
                     recordingSuccess = [_meterRecorder record];
+                    audioFile.recorder = recorder;
                     NSLog(@"Prepared for recording audio sample '%@'", audioFile.resourcePath);
                 }
             }
@@ -610,7 +612,7 @@
                 } else {
                     errorMsg = @"Failed to start recording using AVAudioRecorder";
                 }
-                audioFile.recorder = nil;
+                recorder = nil;
                 if (self.avSession) {
                     [self.avSession setActive:NO error:nil];
                 }
@@ -626,7 +628,8 @@
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
             [self.avSession performSelector:rrpSel withObject:^(BOOL granted){
                 if (granted) {
-                    startRecording();
+//                    startRecording();
+                    [self.commandDelegate runInBackground:startRecording];
                 } else {
                     NSString* msg = @"Error creating audio session, microphone permission denied.";
                     NSLog(@"%@", msg);
@@ -640,7 +643,8 @@
             }];
 #pragma clang diagnostic pop
         } else {
-            startRecording();
+//            startRecording();
+            [self.commandDelegate runInBackground:startRecording];
         }
         
     } else {
