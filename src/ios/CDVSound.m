@@ -563,6 +563,8 @@
                 if (![self.avSession.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]) {
                     [self.avSession setCategory:AVAudioSessionCategoryPlayAndRecord error:nil];
                 }
+                UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
+                AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute,sizeof (audioRouteOverride),&audioRouteOverride);
 
                 if (![self.avSession setActive:YES error:&error]) {
                     // other audio with higher priority that does not allow mixing could cause this to fail
