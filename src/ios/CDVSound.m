@@ -590,7 +590,7 @@
             if (error == nil) {
                 recorder.delegate = self;
                 recorder.mediaId = mediaId;
-                recordingSuccess = [audioFile.recorder prepareToRecord];
+                recordingSuccess = [recorder prepareToRecord];
                 if (recordingSuccess) {
                     NSURL *url = [NSURL fileURLWithPath:@"/dev/null"];
                     NSDictionary *settings = [NSDictionary dictionaryWithObjectsAndKeys:
