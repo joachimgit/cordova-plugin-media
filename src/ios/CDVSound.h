@@ -87,7 +87,6 @@ typedef NSUInteger CDVMediaMsg;
 }
 @property (nonatomic, strong) NSMutableDictionary* soundCache;
 @property (nonatomic, strong) AVAudioSession* avSession;
-@property (nonatomic, strong) CDVAudioRecorder* meterRecorder;
 
 - (void)startPlayingAudio:(CDVInvokedUrlCommand*)command;
 - (void)pausePlayingAudio:(CDVInvokedUrlCommand*)command;

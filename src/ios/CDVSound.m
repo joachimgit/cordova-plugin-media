@@ -507,10 +507,6 @@
             if (audioFile.recorder && [audioFile.recorder isRecording]) {
                 [audioFile.recorder stop];
             }
-            if (_meterRecorder && [_meterRecorder isRecording]) {
-                [_meterRecorder stop];
-            }
-            _meterRecorder = nil;
             if (self.avSession) {
                 // [self.avSession setActive:NO error:nil];
                 self.avSession = nil;
@@ -592,19 +588,11 @@
                 recorder.mediaId = mediaId;
                 recordingSuccess = [recorder prepareToRecord];
                 if (recordingSuccess) {
-                    NSURL *url = [NSURL fileURLWithPath:@"/dev/null"];
-                    NSDictionary *settings = [NSDictionary dictionaryWithObjectsAndKeys:
-                                              [NSNumber numberWithFloat: 44100.0],                 AVSampleRateKey,
-                                              [NSNumber numberWithInt: kAudioFormatAppleLossless], AVFormatIDKey,
-                                              [NSNumber numberWithInt: 1],                         AVNumberOfChannelsKey,
-                                              [NSNumber numberWithInt: AVAudioQualityMax],         AVEncoderAudioQualityKey,
-                                              nil];
-                    _meterRecorder = [[CDVAudioRecorder alloc] initWithURL:url settings:settings error:&error];
-                    recordingSuccess = [_meterRecorder prepareToRecord];
-                    _meterRecorder.meteringEnabled = YES;
-                    recordingSuccess = [_meterRecorder record];
+                    recorder.meteringEnabled = YES;
                     audioFile.recorder = recorder;
                     NSLog(@"Prepared for recording audio sample '%@'", audioFile.resourcePath);
+                    NSString* jsString = [NSString stringWithFormat:@"%@(\"%@\",%d,%d);", @"cordova.require('org.apache.cordova.media.Media').onStatus", mediaId, MEDIA_STATE, MEDIA_STARTING];
+                    [self.commandDelegate evalJs:jsString];
                 }
             }
             
@@ -667,6 +655,9 @@
         if (recordingSuccess == NO) {
             NSString* errorMsg = @"Failed to start recording using AVAudioRecorder";
             NSLog(@"%@", errorMsg);
+            NSString* jsString = [NSString stringWithFormat:@"%@(\"%@\",%d,%@);", @"cordova.require('org.apache.cordova.media.Media').onStatus", mediaId, MEDIA_ERROR, [self createMediaErrorWithCode:MEDIA_ERR_ABORTED message:errorMsg]];
+            [self.commandDelegate evalJs:jsString];
+
         } else {
             NSLog(@"Started recording audio sample '%@'", audioFile.resourcePath);
             NSString* jsString = [NSString stringWithFormat:@"%@(\"%@\",%d,%d);", @"cordova.require('org.apache.cordova.media.Media').onStatus", mediaId, MEDIA_STATE, MEDIA_RUNNING];
@@ -677,11 +668,13 @@
 
 - (void)getRecordingLevel:(CDVInvokedUrlCommand*)command
 {
-    double level = 0;
+    NSString* mediaId = [command.arguments objectAtIndex:0];
 
-    if ((_meterRecorder != nil)) {
-        [_meterRecorder updateMeters];
-        level = [_meterRecorder averagePowerForChannel:0];
+    double level = -160;
+    CDVAudioFile* audioFile = [[self soundCache] objectForKey:mediaId];
+    if ((audioFile != nil) && (audioFile.recorder != nil)) {
+        [audioFile.recorder updateMeters];
+        level = [audioFile.recorder averagePowerForChannel:0];
     }
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:level];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
