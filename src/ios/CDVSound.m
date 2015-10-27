@@ -21,6 +21,7 @@
 #import "CDVFile.h"
 #import <Cordova/NSArray+Comparisons.h>
 #import <Cordova/CDVJSON.h>
+#import <math.h>
 
 #define DOCUMENTS_SCHEME_PREFIX @"documents://"
 #define HTTP_SCHEME_PREFIX @"http://"
@@ -676,6 +677,7 @@
         [audioFile.recorder updateMeters];
         level = [audioFile.recorder averagePowerForChannel:0];
     }
+    level = pow(10, level / 20.0);
     CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDouble:level];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 }

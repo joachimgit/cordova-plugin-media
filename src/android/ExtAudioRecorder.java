@@ -275,14 +275,15 @@ public class ExtAudioRecorder
      * @return returns the largest amplitude since the last call, or 0 when not in recording state. 
      * 
      */
-    public int getMaxAmplitude()
+    public double getMaxAmplitude()
     {
         if (state == State.RECORDING)
         {
             if (rUncompressed)
             {
-                int result = cAmplitude;
+                double result = cAmplitude;
                 cAmplitude = 0;
+                result = (result) / 32768.0;
                 return result;
             }
             else

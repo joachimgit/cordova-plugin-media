@@ -82,7 +82,7 @@ public class AudioHandler extends CordovaPlugin {
             this.webView.sendJavascript("cordova.require('org.apache.cordova.media.Media').onStatus(\""+ args.getString(0) + "\", 1, 1)");
         }
         else if (action.equals("getRecordingLevel")) {
-            int a = recorder.getMaxAmplitude();
+            float a = (float)recorder.getMaxAmplitude();
             callbackContext.sendPluginResult(new PluginResult(status, a));
             return true;
         }
