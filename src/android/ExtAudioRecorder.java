@@ -56,7 +56,7 @@ public class ExtAudioRecorder
     
     // The interval in which the recorded samples are output to the file
     // Used only in uncompressed mode
-    private static final int TIMER_INTERVAL = 120;
+    private static final int TIMER_INTERVAL = 16;
     
     // Toggles uncompressed recording on/off; RECORDING_UNCOMPRESSED / RECORDING_COMPRESSED
     private boolean         rUncompressed;
@@ -118,10 +118,11 @@ public class ExtAudioRecorder
     {
         public void onPeriodicNotification(AudioRecord recorder)
         {
-            audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
+            int len = audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
             try
-            { 
-                randomAccessWriter.write(buffer); // Write buffer to file
+            {
+                Log.d("AUDIOREC", "update " + len + "/" + buffer.length);
+                randomAccessWriter.write(buffer,0,len); // Write buffer to file
                 payloadSize += buffer.length;
                 if (bSamples == 16)
                 {
@@ -197,6 +198,7 @@ public class ExtAudioRecorder
 
                 framePeriod = sampleRate * TIMER_INTERVAL / 1000;
                 bufferSize = framePeriod * 2 * bSamples * nChannels / 8;
+                bufferSize = 16384;
                 if (bufferSize < AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat))
                 { // Check to make sure buffer size is not smaller than the smallest allowed one 
                     bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
@@ -210,6 +212,7 @@ public class ExtAudioRecorder
                 if (audioRecorder.getState() != AudioRecord.STATE_INITIALIZED)
                     throw new Exception("AudioRecord initialization failed");
                 audioRecorder.setRecordPositionUpdateListener(updateListener);
+                framePeriod = 1024;
                 audioRecorder.setPositionNotificationPeriod(framePeriod);
             } else
             { // RECORDING_COMPRESSED
@@ -238,8 +241,7 @@ public class ExtAudioRecorder
     /**
      * Sets output file path, call directly after construction/reset.
      *  
-     * @param output file path
-     * 
+     *
      */
     public void setOutputFile(String argPath)
     {
@@ -342,7 +344,9 @@ public class ExtAudioRecorder
                         randomAccessWriter.writeBytes("data");
                         randomAccessWriter.writeInt(0); // Data chunk size not known yet, write 0
                         
-                        buffer = new byte[framePeriod*bSamples/8*nChannels];
+                         // buffer = new byte[framePeriod*bSamples/8*nChannels];
+                        buffer = new byte[framePeriod * 2];
+
                         state = State.READY;
                     }
                     else
