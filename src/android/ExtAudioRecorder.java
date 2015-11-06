@@ -96,6 +96,10 @@ public class ExtAudioRecorder
     // Number of bytes written to file after header(only in uncompressed mode)
     // after stop() is called, this size is written to the header/data chunk in the wave file
     private int                      payloadSize;
+
+    private boolean                 done;
+
+    private Thread                  readThread;
     
     /**
     *
@@ -122,8 +126,11 @@ public class ExtAudioRecorder
             try
             {
                 Log.d("AUDIOREC", "update " + len + "/" + buffer.length);
+                if (len <= 0){
+                    return;
+                }
                 randomAccessWriter.write(buffer,0,len); // Write buffer to file
-                payloadSize += buffer.length;
+                payloadSize += len;
                 if (bSamples == 16)
                 {
                     for (int i=0; i<buffer.length/2; i++)
@@ -211,7 +218,7 @@ public class ExtAudioRecorder
 
                 if (audioRecorder.getState() != AudioRecord.STATE_INITIALIZED)
                     throw new Exception("AudioRecord initialization failed");
-                audioRecorder.setRecordPositionUpdateListener(updateListener);
+                // audioRecorder.setRecordPositionUpdateListener(updateListener);
                 framePeriod = 1024;
                 audioRecorder.setPositionNotificationPeriod(framePeriod);
             } else
@@ -235,6 +242,43 @@ public class ExtAudioRecorder
                 Log.e(ExtAudioRecorder.class.getName(), "Unknown error occured while initializing recording");
             }
             state = State.ERROR;
+        }
+    }
+
+    private void writeAudioDataToFile() {
+        // Write the output audio in byte
+        try
+        {
+            while(true) {
+                int len = audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
+                // Log.d("AUDIOREC", "update " + len + "/" + buffer.length);
+                if (len <= 0) {
+                    return;
+                }
+                randomAccessWriter.write(buffer, 0, len); // Write buffer to file
+                payloadSize += len;
+                if (bSamples == 16) {
+                    for (int i = 0; i < buffer.length / 2; i++) { // 16bit sample size
+                        short curSample = getShort(buffer[i * 2], buffer[i * 2 + 1]);
+                        if (curSample > cAmplitude) { // Check amplitude
+                            cAmplitude = curSample;
+                        }
+                    }
+                } else { // 8bit sample size
+                    for (int i = 0; i < buffer.length; i++) {
+                        if (buffer[i] > cAmplitude) { // Check amplitude
+                            cAmplitude = buffer[i];
+                        }
+                    }
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            Log.e(ExtAudioRecorder.class.getName(), "Error occured in updateListener, recording is aborted");
+            //stop();
+        } finally {
+            done = true;
         }
     }
     
@@ -414,6 +458,7 @@ public class ExtAudioRecorder
         {
             if (audioRecorder != null)
             {
+                Log.d("AUDIOREC", "release");
                 audioRecorder.release();
             }
         }
@@ -479,7 +524,13 @@ public class ExtAudioRecorder
             {
                 payloadSize = 0;
                 audioRecorder.startRecording();
-                audioRecorder.read(buffer, 0, buffer.length);
+                readThread = new Thread(new Runnable() {
+                    public void run() {
+                        writeAudioDataToFile();
+                    }
+                }, "AudioRecorder Thread");
+                readThread.start();
+                //audioRecorder.read(buffer, 0, buffer.length);
             }
             else
             {
@@ -508,10 +559,18 @@ public class ExtAudioRecorder
         {
             if (rUncompressed)
             {
+                Log.d("AUDIOREC", "stop");
+
                 audioRecorder.stop();
-                
+                try {
+                    readThread.join(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
                 try
                 {
+                    Log.d("AUDIOREC", "finalize");
                     randomAccessWriter.seek(4); // Write size to RIFF header
                     randomAccessWriter.writeInt(Integer.reverseBytes(36+payloadSize));
                 
