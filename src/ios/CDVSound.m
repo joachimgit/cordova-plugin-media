@@ -17,6 +17,8 @@
  under the License.
  */
 
+// TODO complete rewrite
+
 #import "CDVSound.h"
 #import "CDVFile.h"
 #import <Cordova/NSArray+Comparisons.h>
@@ -32,6 +34,68 @@
 @implementation CDVSound
 
 @synthesize soundCache, avSession;
+
+
+- (void)pluginInitialize
+{
+    [self hasAudioSession];
+    [self resetAVSession];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleAudioSessionInterruption:)
+                                                 name:AVAudioSessionInterruptionNotification
+                                               object:[AVAudioSession sharedInstance]];
+}
+
+- (void)resetAVSession
+{
+
+    NSLog(@"resetAVSession");
+
+    NSError*  error = nil;
+    [avSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
+    if (error != nil) {
+        NSLog(@"Error %ld, %@",
+              (long)error.code, error.localizedDescription);
+    }
+
+    double sampleRate = 44100.0;
+    [avSession setPreferredSampleRate:sampleRate error:&error];
+    if (error) {
+        NSLog(@"Error %ld, %@",
+              (long)error.code, error.localizedDescription);
+    }
+
+    if (![avSession setActive:YES error:&error]) {
+        if (error) {
+            NSLog(@"Error %ld, %@",
+                  (long)error.code, error.localizedDescription);
+        }
+    }
+}
+
+
+- (void)handleAudioSessionInterruption:(NSNotification*)notification {
+
+    NSNumber *interruptionType = [[notification userInfo] objectForKey:AVAudioSessionInterruptionTypeKey];
+    NSNumber *interruptionOption = [[notification userInfo] objectForKey:AVAudioSessionInterruptionOptionKey];
+
+    switch (interruptionType.unsignedIntegerValue) {
+        case AVAudioSessionInterruptionTypeBegan:{
+            NSLog(@"AVAudioSessionInterruptionTypeBegan");
+        } break;
+        case AVAudioSessionInterruptionTypeEnded:{
+            NSLog(@"AVAudioSessionInterruptionTypeEnded");
+            [self resetAVSession];
+            if (interruptionOption.unsignedIntegerValue == AVAudioSessionInterruptionOptionShouldResume) {
+                NSLog(@"AVAudioSessionInterruptionOptionShouldResume");
+            }
+        } break;
+        default:
+            break;
+    }
+}
+
+
 
 - (NSURL*)urlForResource:(NSString*)resourcePath
 {
@@ -557,11 +621,24 @@
             }
             // get the audioSession and set the category to allow recording when device is locked or ring/silent switch engaged
             if ([self hasAudioSession]) {
+                NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
                 if (![self.avSession.category isEqualToString:AVAudioSessionCategoryPlayAndRecord]) {
-                    [self.avSession setCategory:AVAudioSessionCategoryPlayAndRecord error:nil];
+                    [self.avSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
+                    if (error != nil) {
+                        NSLog(@"Error %ld, %@",
+                              (long)error.code, error.localizedDescription);
+
+                    }
+
+                    double sampleRate = 44100.0;
+                    [self.avSession setPreferredSampleRate:sampleRate error:&error];
+                    if (error) {
+                        NSLog(@"Error %ld, %@",
+                              (long)error.code, error.localizedDescription);
+                    }
                 }
-                UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
-                AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute,sizeof (audioRouteOverride),&audioRouteOverride);
+//                UInt32 audioRouteOverride = kAudioSessionOverrideAudioRoute_Speaker;
+//                AudioSessionSetProperty (kAudioSessionProperty_OverrideAudioRoute,sizeof (audioRouteOverride),&audioRouteOverride);
 
                 if (![self.avSession setActive:YES error:&error]) {
                     // other audio with higher priority that does not allow mixing could cause this to fail
@@ -571,6 +648,8 @@
                     [self.commandDelegate evalJs:jsString];
                     return;
                 }
+
+                NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
             }
             
             // create a new recorder for each start record

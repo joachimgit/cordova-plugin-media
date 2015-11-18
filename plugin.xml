@@ -97,7 +97,8 @@ id="org.apache.cordova.media"
      <platform name="ios">    
          <config-file target="config.xml" parent="/*">
              <feature name="Media">
-                 <param name="ios-package" value="CDVSound" /> 
+                 <param name="ios-package" value="CDVSound" />
+                 <param name="onload" value="true" /> 
              </feature>
          </config-file>
          <header-file src="src/ios/CDVSound.h" />
