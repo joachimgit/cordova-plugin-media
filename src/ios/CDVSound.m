@@ -85,9 +85,9 @@
         } break;
         case AVAudioSessionInterruptionTypeEnded:{
             NSLog(@"AVAudioSessionInterruptionTypeEnded");
-            [self resetAVSession];
             if (interruptionOption.unsignedIntegerValue == AVAudioSessionInterruptionOptionShouldResume) {
                 NSLog(@"AVAudioSessionInterruptionOptionShouldResume");
+                    [self resetAVSession];
             }
         } break;
         default:
@@ -574,7 +574,7 @@
             }
             if (self.avSession) {
                 // [self.avSession setActive:NO error:nil];
-                self.avSession = nil;
+//                self.avSession = nil;
             }
             [[self soundCache] removeObjectForKey:mediaId];
             NSLog(@"Media with id %@ released", mediaId);
