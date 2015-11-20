@@ -40,23 +40,43 @@
 {
     [self hasAudioSession];
     [self resetAVSession];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleAudioSessionInterruption:)
-                                                 name:AVAudioSessionInterruptionNotification
-                                               object:[AVAudioSession sharedInstance]];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(handleAudioSessionInterruption:)
+//                                                 name:AVAudioSessionInterruptionNotification
+//                                               object:avSession];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(handleBecomeActive:)
+//                                                 name:UIApplicationDidBecomeActiveNotification
+//                                               object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(handleEnterForeground:)
+//                                                 name:UIApplicationWillEnterForegroundNotification
+//                                               object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(handleResignActive:)
+//                                                 name:UIApplicationWillResignActiveNotification
+//                                               object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver: self
+//                                             selector: @selector(handleRouteChange:)
+//                                                 name: AVAudioSessionRouteChangeNotification
+//                                               object: avSession];
+
 }
 
 - (void)resetAVSession
 {
 
     NSLog(@"resetAVSession");
-
+    NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
+    NSLog(@"old category: %@", self.avSession.category);
     NSError*  error = nil;
+
     [avSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
     if (error != nil) {
         NSLog(@"Error %ld, %@",
               (long)error.code, error.localizedDescription);
     }
+    NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
 
     double sampleRate = 44100.0;
     [avSession setPreferredSampleRate:sampleRate error:&error];
@@ -65,14 +85,84 @@
               (long)error.code, error.localizedDescription);
     }
 
-    if (![avSession setActive:YES error:&error]) {
-        if (error) {
-            NSLog(@"Error %ld, %@",
-                  (long)error.code, error.localizedDescription);
-        }
+    [avSession setActive:YES error:&error];
+    if (error) {
+        NSLog(@"Error %ld, %@",
+              (long)error.code, error.localizedDescription);
     }
+
+    NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
+
+
 }
 
+- (void)handleBecomeActive:(NSNotification*)notification {
+    NSLog(@"didBecomeActive");
+
+//    [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(resetAVSession) userInfo:nil repeats:NO];
+//    [self resetAVSession];
+}
+- (void)handleResignActive:(NSNotification*)notification {
+    NSLog(@"handleResignActive");
+
+    //    [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(resetAVSession) userInfo:nil repeats:NO];
+    //    [self resetAVSession];
+}
+
+
+- (void)handleEnterForeground:(NSNotification*)notification {
+    NSLog(@"handleEnterForeground");
+
+    //    [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(resetAVSession) userInfo:nil repeats:NO];
+//        [self resetAVSession];
+}
+
+
+- (void)handleRouteChange:(NSNotification*)notification {
+
+    NSDictionary *interuptionDict = notification.userInfo;
+
+    NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
+
+    switch (routeChangeReason) {
+        case AVAudioSessionRouteChangeReasonUnknown:
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonUnknown");
+            break;
+
+        case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
+            // a headset was added or removed
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonNewDeviceAvailable");
+            break;
+
+        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
+            // a headset was added or removed
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonOldDeviceUnavailable");
+            break;
+
+        case AVAudioSessionRouteChangeReasonCategoryChange:
+            // called at start - also when other audio wants to play
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonCategoryChange");
+//            [self resetAVSession];
+            NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
+            NSLog(@"old category: %@", self.avSession.category);
+            break;
+
+        case AVAudioSessionRouteChangeReasonOverride:
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonOverride");
+            break;
+
+        case AVAudioSessionRouteChangeReasonWakeFromSleep:
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonWakeFromSleep");
+            break;
+
+        case AVAudioSessionRouteChangeReasonNoSuitableRouteForCategory:
+            NSLog(@"routeChangeReason : AVAudioSessionRouteChangeReasonNoSuitableRouteForCategory");
+            break;
+            
+        default:
+            break;
+    }
+}
 
 - (void)handleAudioSessionInterruption:(NSNotification*)notification {
 
@@ -87,7 +177,8 @@
             NSLog(@"AVAudioSessionInterruptionTypeEnded");
             if (interruptionOption.unsignedIntegerValue == AVAudioSessionInterruptionOptionShouldResume) {
                 NSLog(@"AVAudioSessionInterruptionOptionShouldResume");
-                    [self resetAVSession];
+//                    [self resetAVSession];
+//                [NSTimer scheduledTimerWithTimeInterval:1.0 target:self selector:@selector(resetAVSession) userInfo:nil repeats:NO];
             }
         } break;
         default:
