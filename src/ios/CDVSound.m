@@ -78,7 +78,7 @@
     }
     NSLog(@"Sample Rate:%0.0fHz", self.avSession.sampleRate);
 
-    double sampleRate = 44100.0;
+    double sampleRate = 48000.0;
     [avSession setPreferredSampleRate:sampleRate error:&error];
     if (error) {
         NSLog(@"Error %ld, %@",
@@ -721,7 +721,7 @@
 
                     }
 
-                    double sampleRate = 44100.0;
+                    double sampleRate = 48000.0;
                     [self.avSession setPreferredSampleRate:sampleRate error:&error];
                     if (error) {
                         NSLog(@"Error %ld, %@",
@@ -745,7 +745,7 @@
             
             // create a new recorder for each start record
             NSDictionary *settings = [NSDictionary dictionaryWithObjectsAndKeys:
-                                      [NSNumber numberWithFloat: 44100.0],                 AVSampleRateKey,
+                                      [NSNumber numberWithFloat: 48000.0],                 AVSampleRateKey,
                                       [NSNumber numberWithInt: kAudioFormatLinearPCM], AVFormatIDKey,
                                       [NSNumber numberWithInt: 1],                         AVNumberOfChannelsKey,
                                       [NSNumber numberWithInt: 16],         AVLinearPCMBitDepthKey,
